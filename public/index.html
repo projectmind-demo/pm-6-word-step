@@ -1,21 +1,33 @@
 <!doctype html>
-<html lang="ja">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f7f5f0" />
-    <title>ワードステップ</title>
+    <meta name="theme-color" content="#f7f4ee" />
+    <title>ワードステップ｜英检准2级每日单词</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="page-shell">
-      <header class="topbar"><a class="brand" href="#home" aria-label="ホームへ戻る"><span class="brand-mark">W</span><span>ワードステップ</span></a><span class="brand-note">毎日、ひとつずつ。</span></header>
-      <section id="home-view" class="view" aria-labelledby="calendar-title">
-        <div class="intro"><p class="eyebrow">学習カレンダー</p><h1>学習カレンダー</h1><p>日にちを選んで、今日の学習を始めましょう。</p></div>
-        <div class="calendar-layout"><div class="calendar-card"><div class="calendar-heading"><h2 id="calendar-title"></h2><div class="month-controls"><button id="prev-month" class="icon-button" aria-label="前の月">←</button><button id="next-month" class="icon-button" aria-label="次の月">→</button></div></div><div class="weekdays"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div><div id="calendar-grid" class="calendar-grid"></div><div class="calendar-legend"><span><i class="dot today-dot"></i>今日</span><span><i class="dot done-dot"></i>学習済み</span></div></div><aside class="home-actions"><div class="today-card"><p class="eyebrow">今日</p><h2 id="today-label"></h2><p>10個の単語を覚えて、確認テストに挑戦しましょう。</p><button id="today-button" class="primary-button">今日の学習を始める</button></div><button id="home-test-button" class="secondary-button">今日のテストを受ける</button></aside></div>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="回到顶部"><span class="brand-mark">W</span><span>ワードステップ</span></a>
+        <span class="level-tag">英检准2级</span>
+      </header>
+      <section class="hero" id="top">
+        <p class="eyebrow">每日一点，稳步积累</p>
+        <h1>准2级单词学习</h1>
+        <p>每天10个高频词，记住一个，再向前一步。</p>
       </section>
-      <section id="learn-view" class="view hidden" aria-labelledby="learn-title"><div class="page-heading"><div><a class="back-link" href="#home">← カレンダーへ戻る</a><p class="eyebrow">単語リスト</p><h1 id="learn-title">今日の単語</h1><p id="learn-date" class="subline"></p></div><button id="learn-test-button" class="secondary-button">テストを受ける</button></div><div id="word-list" class="word-list"></div><div class="learn-footer"><span id="learn-status"></span><button id="learn-test-button-bottom" class="primary-button">覚えたらテストへ進む</button></div></section>
-      <section id="test-view" class="view hidden" aria-labelledby="test-title"><div class="page-heading"><div><a class="back-link" id="test-back-link" href="#learn">← 学習へ戻る</a><p class="eyebrow">確認テスト</p><h1 id="test-title">確認テスト</h1><p id="test-date" class="subline"></p></div></div><div id="test-panel" class="test-panel"></div></section>
+      <section class="dashboard" aria-label="学习概况">
+        <div class="day-card"><span class="card-label">当前学习日</span><strong id="day-number">第 1 天</strong><span id="day-caption">共 10 个单词</span></div>
+        <div class="progress-card"><div class="progress-heading"><span>今日进度</span><strong id="progress-text">0 / 10</strong></div><div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div><p id="progress-note">完成今天的10个单词，就能解锁下一天。</p></div>
+      </section>
+      <section class="study-section" aria-labelledby="words-title">
+        <div class="section-heading"><div><p class="eyebrow">TODAY'S WORDS</p><h2 id="words-title">第1天单词</h2></div><span class="date-badge" id="date-badge"></span></div>
+        <div id="word-list" class="word-list"></div>
+      </section>
+      <section class="next-panel" id="next-panel" aria-live="polite"></section>
+      <footer>进度只保存在此设备的浏览器中 · 刷新页面不会丢失</footer>
     </main>
     <script src="./app.js"></script>
   </body>
