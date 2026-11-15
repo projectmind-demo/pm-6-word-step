@@ -35,7 +35,7 @@ async function createSession(userId, res) {
   await db.execute({ sql: 'INSERT INTO sessions (id,user_id,expires_at) VALUES (?,?,?)', args: [token, userId, expires] });
   setSession(res, token);
 }
-const requireUser = async (req, res) => { const user = await currentUser(req); if (!user) json(res, 401, { error: 'ログインが必要です。' }); return user; };
+const requireUser = async (req, res) => { const user = await currentUser(req); if (!user) json(res, 401, { error: '请先登录。' }); return user; };
 
 export default async function handler(req, res) {
   try {
@@ -45,15 +45,15 @@ export default async function handler(req, res) {
 
     if (route === 'auth/register' && method === 'POST') {
       const input = await body(req); const email = cleanEmail(input.email); const name = String(input.name || '').trim(); const password = String(input.password || '');
-      if (!email.includes('@') || !name || password.length < 8) return json(res, 400, { error: '名前、正しいメールアドレス、8文字以上のパスワードを入力してください。' });
+      if (!email.includes('@') || !name || password.length < 8) return json(res, 400, { error: '请输入姓名、正确的邮箱地址和至少8位的密码。' });
       const passwordHash = await hashPassword(password);
       const userId = id();
-      try { await db.execute({ sql: 'INSERT INTO users (id,email,name,password_hash) VALUES (?,?,?,?)', args: [userId, email, name, passwordHash] }); } catch { return json(res, 409, { error: 'このメールアドレスはすでに登録されています。' }); }
+      try { await db.execute({ sql: 'INSERT INTO users (id,email,name,password_hash) VALUES (?,?,?,?)', args: [userId, email, name, passwordHash] }); } catch { return json(res, 409, { error: '该邮箱已注册。' }); }
       await createSession(userId, res); return json(res, 201, { user: { id: userId, email, name } });
     }
     if (route === 'auth/login' && method === 'POST') {
       const input = await body(req); const result = await db.execute({ sql: 'SELECT id,email,name,password_hash FROM users WHERE email=?', args: [cleanEmail(input.email)] }); const user = result.rows[0];
-      if (!user || !(await checkPassword(String(input.password || ''), user.password_hash))) return json(res, 401, { error: 'メールアドレスまたはパスワードが正しくありません。' });
+      if (!user || !(await checkPassword(String(input.password || ''), user.password_hash))) return json(res, 401, { error: '邮箱或密码不正确。' });
       await createSession(user.id, res); return json(res, 200, { user: { id: user.id, email: user.email, name: user.name } });
     }
     if (route === 'auth/logout' && method === 'POST') { const token = parseCookies(req.headers.cookie).word_step_session; if (token) await db.execute({ sql: 'DELETE FROM sessions WHERE id=?', args: [token] }); res.setHeader('Set-Cookie', `${cookieName}=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax`); return json(res, 200, { ok: true }); }
@@ -61,10 +61,10 @@ export default async function handler(req, res) {
 
     const user = await requireUser(req, res); if (!user) return;
     if (route === 'words' && method === 'GET') { const result = await db.execute({ sql: 'SELECT id,word,meaning,example,created_at FROM words WHERE user_id=? ORDER BY created_at DESC', args: [user.id] }); return json(res, 200, { words: result.rows }); }
-    if (route === 'words' && method === 'POST') { const input = await body(req); const word = String(input.word || '').trim(); const meaning = String(input.meaning || '').trim(); const example = String(input.example || '').trim(); if (!word || !meaning) return json(res, 400, { error: '単語と意味を入力してください。' }); const wordId = id(); await db.execute({ sql: 'INSERT INTO words (id,user_id,word,meaning,example) VALUES (?,?,?,?,?)', args: [wordId,user.id,word,meaning,example] }); return json(res, 201, { word: { id: wordId, word, meaning, example } }); }
+    if (route === 'words' && method === 'POST') { const input = await body(req); const word = String(input.word || '').trim(); const meaning = String(input.meaning || '').trim(); const example = String(input.example || '').trim(); if (!word || !meaning) return json(res, 400, { error: '请输入单词和释义。' }); const wordId = id(); await db.execute({ sql: 'INSERT INTO words (id,user_id,word,meaning,example) VALUES (?,?,?,?,?)', args: [wordId,user.id,word,meaning,example] }); return json(res, 201, { word: { id: wordId, word, meaning, example } }); }
     if (route.startsWith('words/') && method === 'DELETE') { const wordId = route.split('/')[1]; await db.execute({ sql: 'DELETE FROM words WHERE id=? AND user_id=?', args: [wordId,user.id] }); return json(res, 200, { ok: true }); }
     if (route === 'tests' && method === 'GET') { const result = await db.execute({ sql: 'SELECT id,test_date,score,total,created_at FROM test_results WHERE user_id=? ORDER BY test_date DESC', args: [user.id] }); return json(res, 200, { results: result.rows }); }
-    if (route === 'tests' && method === 'POST') { const input = await body(req); const score = Number(input.score); const total = Number(input.total); const testDate = /^\d{4}-\d{2}-\d{2}$/.test(input.testDate || '') ? input.testDate : new Date().toISOString().slice(0,10); if (!Number.isInteger(score) || !Number.isInteger(total) || score < 0 || total < 1 || score > total) return json(res, 400, { error: 'テスト結果が正しくありません。' }); await db.execute({ sql: 'INSERT INTO test_results (id,user_id,test_date,score,total) VALUES (?,?,?,?,?) ON CONFLICT(user_id,test_date) DO UPDATE SET score=excluded.score,total=excluded.total,created_at=CURRENT_TIMESTAMP', args: [id(),user.id,testDate,score,total] }); return json(res, 201, { ok: true }); }
-    return json(res, 404, { error: '見つかりません。' });
-  } catch (error) { console.error(error); return json(res, 500, { error: 'サーバーでエラーが発生しました。' }); }
+    if (route === 'tests' && method === 'POST') { const input = await body(req); const score = Number(input.score); const total = Number(input.total); const testDate = /^\d{4}-\d{2}-\d{2}$/.test(input.testDate || '') ? input.testDate : new Date().toISOString().slice(0,10); if (!Number.isInteger(score) || !Number.isInteger(total) || score < 0 || total < 1 || score > total) return json(res, 400, { error: '测试结果不正确。' }); await db.execute({ sql: 'INSERT INTO test_results (id,user_id,test_date,score,total) VALUES (?,?,?,?,?) ON CONFLICT(user_id,test_date) DO UPDATE SET score=excluded.score,total=excluded.total,created_at=CURRENT_TIMESTAMP', args: [id(),user.id,testDate,score,total] }); return json(res, 201, { ok: true }); }
+    return json(res, 404, { error: '未找到请求的资源。' });
+  } catch (error) { console.error(error); return json(res, 500, { error: '服务器发生错误，请稍后重试。' }); }
 }
