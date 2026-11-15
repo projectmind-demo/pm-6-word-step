@@ -1,29 +1,88 @@
 (() => {
   'use strict';
-  const STORAGE_KEY = 'word-step-progress-v2';
-  // 各単語は [英語, 日本語, 中国語, IPA] の順で保持する。
-  const rawDays = [
-    [['achieve','達成する','实现；达到','əˈtʃiːv'],['advice','助言','建议','ədˈvaɪs'],['afford','余裕がある','负担得起','əˈfɔːrd'],['allow','許可する','允许','əˈlaʊ'],['announce','発表する','宣布','əˈnaʊns'],['appear','現れる','出现','əˈpɪər'],['apply','申し込む；応用する','申请；应用','əˈplaɪ'],['arrange','手配する','安排','əˈreɪndʒ'],['attend','出席する','参加','əˈtend'],['avoid','避ける','避免','əˈvɔɪd']],
-    [['balance','バランス','平衡','ˈbæləns'],['behavior','行動','行为','bɪˈheɪvjər'],['belong','所属する','属于','bɪˈlɔːŋ'],['benefit','利益；役に立つ','好处；受益','ˈbenɪfɪt'],['borrow','借りる','借入','ˈbɑːroʊ'],['brave','勇敢な','勇敢的','breɪv'],['career','職業','职业','kəˈrɪər'],['cause','原因；引き起こす','原因；导致','kɔːz'],['certain','確かな','确定的','ˈsɜːrtən'],['challenge','挑戦','挑战','ˈtʃælɪndʒ']],
-    [['choice','選択','选择','tʃɔɪs'],['community','地域社会','社区','kəˈmjuːnəti'],['compare','比較する','比较','kəmˈper'],['complete','完成する；完全な','完成；完整的','kəmˈpliːt'],['condition','状態；条件','条件；状况','kənˈdɪʃən'],['connect','つなぐ','连接','kəˈnekt'],['consider','考慮する','考虑','kənˈsɪdər'],['contain','含む','包含','kənˈteɪn'],['continue','続ける','继续','kənˈtɪnjuː'],['create','創造する','创造','kriˈeɪt']],
-    [['decide','決める','决定','dɪˈsaɪd'],['deliver','配達する；伝える','递送；发表','dɪˈlɪvər'],['depend','頼る；次第である','取决于；依靠','dɪˈpend'],['describe','説明する','描述','dɪˈskraɪb'],['develop','発達させる','发展；培养','dɪˈveləp'],['difference','違い','差异','ˈdɪfrəns'],['discover','発見する','发现','dɪˈskʌvər'],['education','教育','教育','ˌedʒuˈkeɪʃən'],['encourage','励ます','鼓励','ɪnˈkɜːrɪdʒ'],['environment','環境','环境','ɪnˈvaɪrənmənt']],
-    [['experience','経験','经验；经历','ɪkˈspɪriəns'],['express','表現する','表达','ɪkˈspres'],['familiar','よく知っている','熟悉的','fəˈmɪliər'],['favorite','お気に入りの','最喜欢的','ˈfeɪvərɪt'],['feature','特徴','特色','ˈfiːtʃər'],['foreign','外国の','外国的','ˈfɔːrən'],['freedom','自由','自由','ˈfriːdəm'],['gather','集める','聚集；收集','ˈɡæðər'],['government','政府','政府','ˈɡʌvərnmənt'],['graduate','卒業する；卒業生','毕业；毕业生','ˈɡrædʒuət']]
-  ];
-  const days = rawDays.map((items, day) => items.map((item, index) => ({ id: `${day + 1}-${index}`, en: item[0], ja: item[1], zh: item[2], ipa: item[3] })));
+
+  const AUTH_KEY = 'word-step-auth-v1';
+  const MONTH_KEY = 'word-step-calendar-month-v1';
   const app = document.getElementById('app');
-  let state = readState(); let studyOrder = null; let examOrder = null; let examAnswers = {}; let examSubmitted = false;
-  const escape = (value) => String(value).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-  function readState() { try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); return { currentDay: Math.min(Math.max(Number(saved.currentDay) || 1, 1), days.length), mastered: saved.mastered || {} }; } catch (_) { return { currentDay: 1, mastered: {} }; } }
-  function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {} }
-  function shuffle(items) { const result = items.slice(); for (let i = result.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [result[i], result[j]] = [result[j], result[i]]; } if (result.length > 1 && result.every((item, index) => item.id === items[index].id)) [result[0], result[1]] = [result[1], result[0]]; return result; }
-  function card(word, index) { const done = Boolean(state.mastered[word.id]); return `<article class="word-card ${done ? 'is-mastered' : ''}"><span class="word-index">${String(index + 1).padStart(2, '0')}</span><div class="word-content"><h3>${escape(word.en)}</h3><p class="pronunciation">${escape(word.ipa)}</p><p><span class="label">日本語</span>${escape(word.ja)}</p><p><span class="label">中国語</span>${escape(word.zh)}</p></div><button class="master-button" data-word="${word.id}" aria-pressed="${done}">${done ? '学習済み ✓' : '学習済みにする'}</button></article>`; }
-  function renderLearn() { const day = state.currentDay; const words = days[day - 1]; if (!studyOrder || studyOrder.day !== day) studyOrder = { day, words: shuffle(words) }; const count = words.filter((word) => state.mastered[word.id]).length; const complete = count === words.length; app.innerHTML = `<section class="hero"><p class="eyebrow">毎日少しずつ、着実に</p><h1>英検準2級の単語学習</h1><p>英単語を覚えて、次の一歩へ進みましょう。</p></section><section class="dashboard" aria-label="学習状況"><div class="day-card"><span class="card-label">現在の学習日</span><strong>第${day}日</strong><span>全${words.length}語</span></div><div class="progress-card"><div class="progress-heading"><span>今日の進み具合</span><strong>${count} / ${words.length}</strong></div><div class="progress-track"><span style="width:${count * 10}%"></span></div><p>${complete ? 'すべての単語を学習しました。お疲れさまでした！' : `あと${words.length - count}語で今日の学習は完了です。`}</p></div></section><section class="study-section"><div class="section-heading"><div><p class="eyebrow">単語一覧</p><h2>第${day}日の単語</h2></div><span class="date-badge">ランダム表示</span></div><div class="word-list">${studyOrder.words.map(card).join('')}</div></section><section class="next-panel">${complete && day < days.length ? `<p><strong>第${day}日を完了しました！</strong> 次の単語へ進めます。</p><button id="next-day" class="next-button">第${day + 1}日へ進む →</button>` : complete ? '<p><strong>すばらしいです！</strong> すべての学習を完了しました。</p>' : '<p>単語を確認したら「学習済みにする」を押してください。</p>'}<a class="outline-button" href="#exam">テストを受ける</a></section>`; bindStudy(); }
-  function choices(word, words) { return shuffle([word, ...shuffle(words.filter((item) => item.id !== word.id)).slice(0, 2)]); }
-  function renderExam() { const words = days[state.currentDay - 1]; if (!examOrder) examOrder = shuffle(words); app.innerHTML = `<section class="hero compact-hero"><p class="eyebrow">第${state.currentDay}日の確認テスト</p><h1>学習内容をテスト</h1><p>表示された単語の日本語の意味を選んでください。</p></section><form id="exam-form" class="exam-list">${examOrder.map((word, index) => `<fieldset class="question"><legend><span>問題 ${index + 1}</span><strong>${escape(word.en)}</strong><em>${escape(word.ipa)}</em><small>日本語：${escape(word.ja)} ／ 中国語：${escape(word.zh)}</small></legend>${choices(word, words).map((option) => `<label><input type="radio" name="q-${word.id}" value="${option.id}" ${examAnswers[word.id] === option.id ? 'checked' : ''} ${examSubmitted ? 'disabled' : ''}><span>${escape(option.ja)}</span></label>`).join('')}</fieldset>`).join('')}${examSubmitted ? resultPanel() : '<button class="submit-button" type="submit">答え合わせをする</button>'}</form>`; if (!examSubmitted) { document.getElementById('exam-form').addEventListener('change', (event) => { if (event.target.name) examAnswers[event.target.name.slice(2)] = event.target.value; }); document.getElementById('exam-form').addEventListener('submit', (event) => { event.preventDefault(); examSubmitted = true; renderExam(); }); } }
-  function resultPanel() { const score = examOrder.filter((word) => examAnswers[word.id] === word.id).length; return `<div class="result-panel"><p class="eyebrow">テスト結果</p><strong>${score} / ${examOrder.length}問正解</strong><p>${score === examOrder.length ? '全問正解です！よくできました。' : '間違えた単語を学習ページでもう一度確認しましょう。'}</p><button type="button" id="retry-exam" class="outline-button">もう一度受ける</button><a class="next-button" href="#learn">学習ページへ戻る</a></div>`; }
-  function bindStudy() { document.querySelectorAll('.master-button').forEach((button) => button.addEventListener('click', () => { state.mastered[button.dataset.word] = !state.mastered[button.dataset.word]; saveState(); renderLearn(); })); const next = document.getElementById('next-day'); if (next) next.addEventListener('click', () => { state.currentDay += 1; studyOrder = null; examOrder = null; saveState(); renderLearn(); window.scrollTo({ top: 0, behavior: 'smooth' }); }); }
-  function render() { const exam = window.location.hash === '#exam'; document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === (exam ? 'exam' : 'learn'))); if (exam) renderExam(); else renderLearn(); }
-  window.addEventListener('hashchange', () => { if (window.location.hash === '#exam') { examOrder = null; examAnswers = {}; examSubmitted = false; } else studyOrder = null; render(); });
-  app.addEventListener('click', (event) => { if (event.target.id === 'retry-exam') { examOrder = shuffle(days[state.currentDay - 1]); examAnswers = {}; examSubmitted = false; renderExam(); } });
+  const today = new Date();
+  const pad = (value) => String(value).padStart(2, '0');
+  const monthKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
+  const labels = ['日', '月', '火', '水', '木', '金', '土'];
+  const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+  function isLoggedIn() {
+    return localStorage.getItem(AUTH_KEY) === 'signed-in';
+  }
+
+  function getMonth() {
+    const saved = localStorage.getItem(MONTH_KEY);
+    if (saved && /^\d{4}-\d{2}$/.test(saved)) {
+      const [year, month] = saved.split('-').map(Number);
+      if (month >= 1 && month <= 12) return new Date(year, month - 1, 1);
+    }
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  }
+
+  function setMonth(date) {
+    localStorage.setItem(MONTH_KEY, monthKey(date));
+  }
+
+  function loginView(message = '') {
+    app.innerHTML = `
+      <main class="auth-layout">
+        <section class="auth-intro">
+          <a class="brand" href="./" aria-label="ワードステップ ホームへ"><span class="brand-mark">W</span>ワードステップ</a>
+          <div class="intro-copy"><p class="overline">YOUR WORD JOURNEY</p><h1>毎日の一歩を、<br><em>カレンダー</em>から。</h1><p>学びたい日を見つけて、あなたのペースで単語学習を続けましょう。</p></div>
+          <div class="intro-shape" aria-hidden="true"><span></span><span></span><span></span></div>
+        </section>
+        <section class="auth-panel"><div class="auth-card">
+          <div class="mobile-brand"><span class="brand-mark">W</span>ワードステップ</div><p class="overline">WELCOME BACK</p><h2>ログイン</h2><p class="auth-description">学習カレンダーをひらきましょう。</p>
+          ${message ? `<p class="form-message" role="alert">${message}</p>` : ''}
+          <form id="login-form" novalidate><label for="email">メールアドレス</label><input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required><label for="password">パスワード</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required minlength="4"><button class="primary-button" type="submit">ログインする <span aria-hidden="true">→</span></button></form>
+          <p class="local-note"><span aria-hidden="true">▣</span> この端末のブラウザにログイン状態を保存します</p>
+        </div></section>
+      </main>`;
+    document.getElementById('login-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const email = String(form.get('email') || '').trim();
+      const password = String(form.get('password') || '');
+      if (!email || !email.includes('@') || password.length < 4) {
+        loginView('メールアドレスと4文字以上のパスワードを入力してください。');
+        return;
+      }
+      localStorage.setItem(AUTH_KEY, 'signed-in');
+      render();
+    });
+  }
+
+  function calendarView() {
+    const displayed = getMonth();
+    const year = displayed.getFullYear();
+    const month = displayed.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const previous = new Date(year, month - 1, 1);
+    const next = new Date(year, month + 1, 1);
+    const cells = [];
+    for (let i = 0; i < firstDay; i += 1) cells.push('<div class="day-cell is-empty" aria-hidden="true"></div>');
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+      const weekday = new Date(year, month, day).getDay();
+      cells.push(`<div class="day-cell${isToday ? ' is-today' : ''}${weekday === 0 ? ' is-sunday' : ''}"><span class="day-number">${day}</span>${isToday ? '<span class="today-label">今日</span>' : ''}</div>`);
+    }
+    while (cells.length % 7 !== 0) cells.push('<div class="day-cell is-empty" aria-hidden="true"></div>');
+    app.innerHTML = `
+      <main class="calendar-page"><header class="site-header"><a class="brand" href="./"><span class="brand-mark">W</span>ワードステップ</a><div class="header-actions"><span class="user-chip"><span class="avatar">W</span>学習者</span><button id="logout" class="logout-button" type="button">ログアウト</button></div></header>
+      <section class="calendar-heading"><div><p class="overline">MY CALENDAR</p><h1>学習カレンダー</h1><p class="heading-subtitle">単語学習の予定を、ここから始めましょう。</p></div><button id="today-button" class="today-button" type="button">今日に戻る</button></section>
+      <section class="calendar-card" aria-label="${year}年${monthNames[month]}のカレンダー"><div class="calendar-toolbar"><h2>${year}年 <span>${monthNames[month]}</span></h2><div class="month-controls"><button id="previous-month" type="button" aria-label="前の月へ">←</button><button id="next-month" type="button" aria-label="次の月へ">→</button></div></div><div class="weekdays">${labels.map((label, index) => `<span class="${index === 0 ? 'is-sunday' : ''}">${label}</span>`).join('')}</div><div class="calendar-grid">${cells.join('')}</div></section>
+      <p class="privacy-note"><span aria-hidden="true">▣</span> 学習記録はこのブラウザにのみ保存されます。</p></main>`;
+    document.getElementById('previous-month').addEventListener('click', () => { setMonth(previous); render(); });
+    document.getElementById('next-month').addEventListener('click', () => { setMonth(next); render(); });
+    document.getElementById('today-button').addEventListener('click', () => { setMonth(today); render(); });
+    document.getElementById('logout').addEventListener('click', () => { localStorage.removeItem(AUTH_KEY); render(); });
+  }
+
+  function render() { if (isLoggedIn()) calendarView(); else loginView(); }
   render();
 })();
