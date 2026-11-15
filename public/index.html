@@ -1,33 +1,21 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f4ee" />
-    <title>ワードステップ｜英检准2级每日单词</title>
+    <title>ワードステップ｜英検準2級の単語学習</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#top" aria-label="回到顶部"><span class="brand-mark">W</span><span>ワードステップ</span></a>
-        <span class="level-tag">英检准2级</span>
+        <a class="brand" href="#learn" aria-label="学習ページへ戻る"><span class="brand-mark">W</span><span>ワードステップ</span></a>
+        <nav class="main-nav" aria-label="メインメニュー"><a href="#learn" data-route="learn">学習</a><a href="#exam" data-route="exam">テスト</a></nav>
+        <span class="level-tag">英検準2級</span>
       </header>
-      <section class="hero" id="top">
-        <p class="eyebrow">每日一点，稳步积累</p>
-        <h1>准2级单词学习</h1>
-        <p>每天10个高频词，记住一个，再向前一步。</p>
-      </section>
-      <section class="dashboard" aria-label="学习概况">
-        <div class="day-card"><span class="card-label">当前学习日</span><strong id="day-number">第 1 天</strong><span id="day-caption">共 10 个单词</span></div>
-        <div class="progress-card"><div class="progress-heading"><span>今日进度</span><strong id="progress-text">0 / 10</strong></div><div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div><p id="progress-note">完成今天的10个单词，就能解锁下一天。</p></div>
-      </section>
-      <section class="study-section" aria-labelledby="words-title">
-        <div class="section-heading"><div><p class="eyebrow">TODAY'S WORDS</p><h2 id="words-title">第1天单词</h2></div><span class="date-badge" id="date-badge"></span></div>
-        <div id="word-list" class="word-list"></div>
-      </section>
-      <section class="next-panel" id="next-panel" aria-live="polite"></section>
-      <footer>进度只保存在此设备的浏览器中 · 刷新页面不会丢失</footer>
+      <div id="app" aria-live="polite"></div>
+      <footer>学習記録はこのブラウザにのみ保存されます。ページを更新しても消えません。</footer>
     </main>
     <script src="./app.js"></script>
   </body>
