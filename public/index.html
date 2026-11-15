@@ -1,60 +1,21 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f7f5f0" />
-    <title>ワードステップ · 家庭英语打卡</title>
+    <title>ワードステップ</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="page-shell">
-      <section id="identity-view" class="identity-view" aria-labelledby="welcome-title">
-        <div class="eyebrow">WORD STEP <span>家庭英语打卡</span></div>
-        <div class="welcome-copy">
-          <p class="kicker">每天十分钟，积少成多</p>
-          <h1 id="welcome-title">今天和谁一起<br /><em>走一步？</em></h1>
-          <p>选择你的专属头像，开始今天的单词练习。</p>
-        </div>
-        <div id="identity-options" class="identity-options" aria-label="选择身份"></div>
-        <p class="identity-note">身份保存在这台设备中，选择后无法更改</p>
+      <header class="topbar"><a class="brand" href="#home" aria-label="ホームへ戻る"><span class="brand-mark">W</span><span>ワードステップ</span></a><span class="brand-note">毎日、ひとつずつ。</span></header>
+      <section id="home-view" class="view" aria-labelledby="calendar-title">
+        <div class="intro"><p class="eyebrow">学習カレンダー</p><h1>学習カレンダー</h1><p>日にちを選んで、今日の学習を始めましょう。</p></div>
+        <div class="calendar-layout"><div class="calendar-card"><div class="calendar-heading"><h2 id="calendar-title"></h2><div class="month-controls"><button id="prev-month" class="icon-button" aria-label="前の月">←</button><button id="next-month" class="icon-button" aria-label="次の月">→</button></div></div><div class="weekdays"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div><div id="calendar-grid" class="calendar-grid"></div><div class="calendar-legend"><span><i class="dot today-dot"></i>今日</span><span><i class="dot done-dot"></i>学習済み</span></div></div><aside class="home-actions"><div class="today-card"><p class="eyebrow">今日</p><h2 id="today-label"></h2><p>10個の単語を覚えて、確認テストに挑戦しましょう。</p><button id="today-button" class="primary-button">今日の学習を始める</button></div><button id="home-test-button" class="secondary-button">今日のテストを受ける</button></aside></div>
       </section>
-
-      <section id="app-view" class="app-view hidden" aria-label="单词打卡主页">
-        <header class="topbar">
-          <div class="brand"><span class="brand-mark">W</span><span>ワードステップ</span></div>
-          <div id="user-chip" class="user-chip"></div>
-        </header>
-
-        <div class="content-wrap">
-          <section class="calendar-section" aria-labelledby="calendar-title">
-            <div class="section-heading">
-              <div>
-                <p class="kicker">学习日历</p>
-                <h2 id="calendar-title"></h2>
-              </div>
-              <div class="month-controls" aria-label="切换月份">
-                <button id="prev-month" class="icon-button" aria-label="上个月">←</button>
-                <button id="next-month" class="icon-button" aria-label="下个月">→</button>
-              </div>
-            </div>
-            <div class="calendar-card">
-              <div class="weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
-              <div id="calendar-grid" class="calendar-grid"></div>
-            </div>
-            <div class="calendar-legend"><span><i class="dot today-dot"></i>今天</span><span><i class="dot done-dot"></i>已完成</span></div>
-          </section>
-
-          <section class="day-section" aria-labelledby="day-title">
-            <div class="day-heading">
-              <div><p class="kicker" id="day-kicker">今日学习</p><h2 id="day-title"></h2></div>
-              <div id="day-status" class="day-status"></div>
-            </div>
-            <div id="word-list" class="word-list"></div>
-            <div id="test-panel" class="test-panel"></div>
-          </section>
-        </div>
-      </section>
+      <section id="learn-view" class="view hidden" aria-labelledby="learn-title"><div class="page-heading"><div><a class="back-link" href="#home">← カレンダーへ戻る</a><p class="eyebrow">単語リスト</p><h1 id="learn-title">今日の単語</h1><p id="learn-date" class="subline"></p></div><button id="learn-test-button" class="secondary-button">テストを受ける</button></div><div id="word-list" class="word-list"></div><div class="learn-footer"><span id="learn-status"></span><button id="learn-test-button-bottom" class="primary-button">覚えたらテストへ進む</button></div></section>
+      <section id="test-view" class="view hidden" aria-labelledby="test-title"><div class="page-heading"><div><a class="back-link" id="test-back-link" href="#learn">← 学習へ戻る</a><p class="eyebrow">確認テスト</p><h1 id="test-title">確認テスト</h1><p id="test-date" class="subline"></p></div></div><div id="test-panel" class="test-panel"></div></section>
     </main>
     <script src="./app.js"></script>
   </body>
