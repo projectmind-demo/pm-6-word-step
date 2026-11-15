@@ -4,11 +4,48 @@
   const AUTH_KEY = 'word-step-auth-v1';
   const MONTH_KEY = 'word-step-calendar-month-v1';
   const app = document.getElementById('app');
+  const WORDS = [
+    { word: 'adapt', meaning: '適応する', example: 'We adapt to change.' },
+    { word: 'bright', meaning: '明るい、聡明な', example: 'She has a bright idea.' },
+    { word: 'curious', meaning: '好奇心の強い', example: 'Stay curious every day.' },
+    { word: 'discover', meaning: '発見する', example: 'Discover a new way to learn.' },
+    { word: 'encourage', meaning: '励ます', example: 'Friends encourage each other.' },
+    { word: 'focus', meaning: '集中する', example: 'Focus on one step at a time.' },
+    { word: 'gather', meaning: '集める', example: 'Gather useful ideas.' },
+    { word: 'improve', meaning: '改善する、上達する', example: 'Practice helps you improve.' },
+    { word: 'notice', meaning: '気づく', example: 'Notice the small details.' },
+    { word: 'practice', meaning: '練習する', example: 'Practice makes progress.' },
+    { word: 'reflect', meaning: '振り返る', example: 'Reflect on what you learned.' },
+    { word: 'steady', meaning: '着実な', example: 'Steady effort builds confidence.' }
+  ];
+  let studyWords = shuffleWords(WORDS);
   const today = new Date();
   const pad = (value) => String(value).padStart(2, '0');
   const monthKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
   const labels = ['日', '月', '火', '水', '木', '金', '土'];
   const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+  function randomIndex(max) {
+    if (window.crypto && window.crypto.getRandomValues) {
+      const values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      return values[0] % max;
+    }
+    return Math.floor(Math.random() * max);
+  }
+
+  function shuffleWords(words) {
+    const shuffled = words.slice();
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = randomIndex(index + 1);
+      [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+    // The source list is alphabetical; prevent the one possible sorted result.
+    if (shuffled.every((item, index) => index === 0 || shuffled[index - 1].word <= item.word)) {
+      [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+    }
+    return shuffled;
+  }
 
   function isLoggedIn() {
     return localStorage.getItem(AUTH_KEY) === 'signed-in';
@@ -52,6 +89,7 @@
         return;
       }
       localStorage.setItem(AUTH_KEY, 'signed-in');
+      studyWords = shuffleWords(WORDS);
       render();
     });
   }
@@ -76,10 +114,12 @@
       <main class="calendar-page"><header class="site-header"><a class="brand" href="./"><span class="brand-mark">W</span>ワードステップ</a><div class="header-actions"><span class="user-chip"><span class="avatar">W</span>学習者</span><button id="logout" class="logout-button" type="button">ログアウト</button></div></header>
       <section class="calendar-heading"><div><p class="overline">MY CALENDAR</p><h1>学習カレンダー</h1><p class="heading-subtitle">単語学習の予定を、ここから始めましょう。</p></div><button id="today-button" class="today-button" type="button">今日に戻る</button></section>
       <section class="calendar-card" aria-label="${year}年${monthNames[month]}のカレンダー"><div class="calendar-toolbar"><h2>${year}年 <span>${monthNames[month]}</span></h2><div class="month-controls"><button id="previous-month" type="button" aria-label="前の月へ">←</button><button id="next-month" type="button" aria-label="次の月へ">→</button></div></div><div class="weekdays">${labels.map((label, index) => `<span class="${index === 0 ? 'is-sunday' : ''}">${label}</span>`).join('')}</div><div class="calendar-grid">${cells.join('')}</div></section>
+      <section class="words-section" aria-labelledby="words-title"><div class="words-heading"><div><p class="overline">TODAY'S WORDS</p><h2 id="words-title">今日の単語</h2><p>順番は毎回ランダムです。12語を一度ずつ学びましょう。</p></div><button id="restart-words" class="restart-button" type="button"><span aria-hidden="true">↻</span> もう一度シャッフル</button></div><div class="word-list">${studyWords.map((item, index) => `<article class="word-card"><span class="word-number">${String(index + 1).padStart(2, '0')}</span><div class="word-copy"><h3>${item.word}</h3><p>${item.meaning}</p><span class="word-example">${item.example}</span></div></article>`).join('')}</div></section>
       <p class="privacy-note"><span aria-hidden="true">▣</span> 学習記録はこのブラウザにのみ保存されます。</p></main>`;
     document.getElementById('previous-month').addEventListener('click', () => { setMonth(previous); render(); });
     document.getElementById('next-month').addEventListener('click', () => { setMonth(next); render(); });
     document.getElementById('today-button').addEventListener('click', () => { setMonth(today); render(); });
+    document.getElementById('restart-words').addEventListener('click', () => { studyWords = shuffleWords(WORDS); calendarView(); });
     document.getElementById('logout').addEventListener('click', () => { localStorage.removeItem(AUTH_KEY); render(); });
   }
 
