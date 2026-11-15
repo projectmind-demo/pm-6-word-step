@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const AUTH_KEY = 'word-step-auth-v1';
+  const AUTH_KEY = 'word-step-identity-v1';
   const MONTH_KEY = 'word-step-calendar-month-v1';
   const app = document.getElementById('app');
   const WORDS = [
@@ -24,6 +24,11 @@
   const monthKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
   const labels = ['日', '月', '火', '水', '木', '金', '土'];
   const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const IDENTITIES = [
+    { id: 'dad', name: '爸爸', avatar: '👨🏻', color: 'blue' },
+    { id: 'mom', name: '妈妈', avatar: '👩🏻', color: 'coral' },
+    { id: 'uu', name: 'UU', avatar: '🧒🏻', color: 'gold' }
+  ];
 
   function randomIndex(max) {
     if (window.crypto && window.crypto.getRandomValues) {
@@ -47,8 +52,19 @@
     return shuffled;
   }
 
-  function isLoggedIn() {
-    return localStorage.getItem(AUTH_KEY) === 'signed-in';
+  function getIdentity() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+      return IDENTITIES.find((identity) => identity.id === saved?.id) || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function selectIdentity(identity) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ id: identity.id }));
+    studyWords = shuffleWords(WORDS);
+    render();
   }
 
   function getMonth() {
@@ -64,7 +80,7 @@
     localStorage.setItem(MONTH_KEY, monthKey(date));
   }
 
-  function loginView(message = '') {
+  function loginView() {
     app.innerHTML = `
       <main class="auth-layout">
         <section class="auth-intro">
@@ -73,28 +89,23 @@
           <div class="intro-shape" aria-hidden="true"><span></span><span></span><span></span></div>
         </section>
         <section class="auth-panel"><div class="auth-card">
-          <div class="mobile-brand"><span class="brand-mark">W</span>ワードステップ</div><p class="overline">WELCOME BACK</p><h2>ログイン</h2><p class="auth-description">学習カレンダーをひらきましょう。</p>
-          ${message ? `<p class="form-message" role="alert">${message}</p>` : ''}
-          <form id="login-form" novalidate><label for="email">メールアドレス</label><input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required><label for="password">パスワード</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="パスワードを入力" required minlength="4"><button class="primary-button" type="submit">ログインする <span aria-hidden="true">→</span></button></form>
-          <p class="local-note"><span aria-hidden="true">▣</span> この端末のブラウザにログイン状態を保存します</p>
+          <div class="mobile-brand"><span class="brand-mark">W</span>ワードステップ</div><p class="overline">WELCOME BACK</p><h2>だれが学びますか？</h2><p class="auth-description">名前を選ぶと、学習カレンダーがひらきます。</p>
+          <div class="identity-list" aria-label="学習する人を選択">
+            ${IDENTITIES.map((identity) => `<button class="identity-option identity-${identity.color}" type="button" data-identity="${identity.id}"><span class="identity-avatar" aria-hidden="true">${identity.avatar}</span><span class="identity-name">${identity.name}</span><span class="identity-arrow" aria-hidden="true">→</span></button>`).join('')}
+          </div>
+          <p class="local-note"><span aria-hidden="true">▣</span> 選んだ名前はこの端末のブラウザに保存されます</p>
         </div></section>
       </main>`;
-    document.getElementById('login-form').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const form = new FormData(event.currentTarget);
-      const email = String(form.get('email') || '').trim();
-      const password = String(form.get('password') || '');
-      if (!email || !email.includes('@') || password.length < 4) {
-        loginView('メールアドレスと4文字以上のパスワードを入力してください。');
-        return;
-      }
-      localStorage.setItem(AUTH_KEY, 'signed-in');
-      studyWords = shuffleWords(WORDS);
-      render();
+    document.querySelectorAll('[data-identity]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const identity = IDENTITIES.find((item) => item.id === button.dataset.identity);
+        if (identity) selectIdentity(identity);
+      });
     });
   }
 
   function calendarView() {
+    const identity = getIdentity();
     const displayed = getMonth();
     const year = displayed.getFullYear();
     const month = displayed.getMonth();
@@ -111,7 +122,7 @@
     }
     while (cells.length % 7 !== 0) cells.push('<div class="day-cell is-empty" aria-hidden="true"></div>');
     app.innerHTML = `
-      <main class="calendar-page"><header class="site-header"><a class="brand" href="./"><span class="brand-mark">W</span>ワードステップ</a><div class="header-actions"><span class="user-chip"><span class="avatar">W</span>学習者</span><button id="logout" class="logout-button" type="button">ログアウト</button></div></header>
+      <main class="calendar-page"><header class="site-header"><a class="brand" href="./"><span class="brand-mark">W</span>ワードステップ</a><div class="header-actions"><span class="user-chip"><span class="avatar avatar-${identity.color}" aria-hidden="true">${identity.avatar}</span><span>${identity.name}</span></span><button id="logout" class="logout-button" type="button">ログアウト</button></div></header>
       <section class="calendar-heading"><div><p class="overline">MY CALENDAR</p><h1>学習カレンダー</h1><p class="heading-subtitle">単語学習の予定を、ここから始めましょう。</p></div><button id="today-button" class="today-button" type="button">今日に戻る</button></section>
       <section class="calendar-card" aria-label="${year}年${monthNames[month]}のカレンダー"><div class="calendar-toolbar"><h2>${year}年 <span>${monthNames[month]}</span></h2><div class="month-controls"><button id="previous-month" type="button" aria-label="前の月へ">←</button><button id="next-month" type="button" aria-label="次の月へ">→</button></div></div><div class="weekdays">${labels.map((label, index) => `<span class="${index === 0 ? 'is-sunday' : ''}">${label}</span>`).join('')}</div><div class="calendar-grid">${cells.join('')}</div></section>
       <section class="words-section" aria-labelledby="words-title"><div class="words-heading"><div><p class="overline">TODAY'S WORDS</p><h2 id="words-title">今日の単語</h2><p>順番は毎回ランダムです。12語を一度ずつ学びましょう。</p></div><button id="restart-words" class="restart-button" type="button"><span aria-hidden="true">↻</span> もう一度シャッフル</button></div><div class="word-list">${studyWords.map((item, index) => `<article class="word-card"><span class="word-number">${String(index + 1).padStart(2, '0')}</span><div class="word-copy"><h3>${item.word}</h3><p>${item.meaning}</p><span class="word-example">${item.example}</span></div></article>`).join('')}</div></section>
@@ -123,6 +134,6 @@
     document.getElementById('logout').addEventListener('click', () => { localStorage.removeItem(AUTH_KEY); render(); });
   }
 
-  function render() { if (isLoggedIn()) calendarView(); else loginView(); }
+  function render() { if (getIdentity()) calendarView(); else loginView(); }
   render();
 })();
