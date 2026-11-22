@@ -1,4 +1,4 @@
-import { client, fail, getDailyWords, requestBody, sendJson, validateDate, validateIdentity } from './_lib/data.mjs';
+import { fail, getDailyWords, requestBody, sendJson, validateDate, validateIdentity } from './_lib/data.mjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return fail(res, 405, 'method not allowed');
@@ -16,15 +16,8 @@ export default async function handler(req, res) {
     const daily = await getDailyWords(body.identity, body.date);
     const known = new Map(daily.flatMap((item) => [[Number(item.id), item], [item.english, item]]));
     if (learned.some((item) => !known.has(item.id ?? item.word))) return fail(res, 400, 'words must belong to the requested day');
-    await client.execute('BEGIN');
-    try {
-      for (const item of learned) {
-        const row = known.get(item.id ?? item.word);
-        await client.execute({ sql: 'UPDATE daily_words SET learned = ? WHERE identity = ? AND study_date = ? AND word_id = ?', args: [item.learned ? 1 : 0, body.identity, body.date, Number(row.id)] });
-      }
-      await client.execute({ sql: 'INSERT INTO study_days (identity, study_date, checked_in, completed_at) VALUES (?, ?, 1, ?) ON CONFLICT(identity, study_date) DO UPDATE SET checked_in = 1, completed_at = excluded.completed_at', args: [body.identity, body.date, new Date().toISOString()] });
-      await client.execute('COMMIT');
-    } catch (error) { await client.execute('ROLLBACK'); throw error; }
+    // Learning/check-in records belong to the current browser and are saved by the client.
+    // Keep this endpoint as validation-compatible legacy support without writing study data.
     return sendJson(res, 200, { identity: body.identity, date: body.date, checkedIn: true });
   } catch (error) { return fail(res, 500, 'unable to save study record'); }
 }
