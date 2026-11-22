@@ -13,16 +13,19 @@ function statements(sql) {
   return sql.replace(/--[^\n]*/g, '').split(';').map((item) => item.trim()).filter(Boolean);
 }
 
-await client.execute('CREATE TABLE IF NOT EXISTS _migrations (filename TEXT PRIMARY KEY, applied_at TEXT NOT NULL)');
+// Older deployments used _migrations with a different schema. Keep that table
+// untouched and use a dedicated tracker for this migration format instead.
+const migrationTable = '_word_step_migrations';
+await client.execute(`CREATE TABLE IF NOT EXISTS ${migrationTable} (filename TEXT PRIMARY KEY, applied_at TEXT NOT NULL)`);
 const files = (await readdir(join(root, 'db/migrations'))).filter((file) => /^\d+_.+\.sql$/.test(file)).sort();
 for (const filename of files) {
-  const existing = await client.execute({ sql: 'SELECT 1 FROM _migrations WHERE filename = ?', args: [filename] });
+  const existing = await client.execute({ sql: `SELECT 1 FROM ${migrationTable} WHERE filename = ?`, args: [filename] });
   if (existing.rows.length) continue;
   await client.execute('BEGIN');
   try {
     const sql = await readFile(join(root, 'db/migrations', filename), 'utf8');
     for (const statement of statements(sql)) await client.execute(statement);
-    await client.execute({ sql: 'INSERT INTO _migrations (filename, applied_at) VALUES (?, ?)', args: [filename, new Date().toISOString()] });
+    await client.execute({ sql: `INSERT INTO ${migrationTable} (filename, applied_at) VALUES (?, ?)`, args: [filename, new Date().toISOString()] });
     await client.execute('COMMIT');
   } catch (error) {
     await client.execute('ROLLBACK');
