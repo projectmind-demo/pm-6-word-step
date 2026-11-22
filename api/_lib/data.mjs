@@ -49,16 +49,13 @@ export async function getDailyWords(identity, date) {
   const all = await client.execute('SELECT id, english, japanese, chinese, phonetic, example FROM words');
   if (all.rows.length < 10) throw new Error('word bank contains fewer than 10 words');
   const selected = [...all.rows].sort((a, b) => hash(`${identity}:${date}:${a.id}`) - hash(`${identity}:${date}:${b.id}`)).slice(0, 10);
-  await client.execute('BEGIN');
-  try {
-    for (let index = 0; index < selected.length; index += 1) {
-      await client.execute({ sql: 'INSERT OR IGNORE INTO daily_words (identity, study_date, word_id, position) VALUES (?, ?, ?, ?)', args: [identity, date, selected[index].id, index] });
-    }
-    await client.execute('COMMIT');
-  } catch (error) {
-    await client.execute('ROLLBACK');
-    throw error;
-  }
+  await client.batch(
+    selected.map((word, index) => ({
+      sql: 'INSERT OR IGNORE INTO daily_words (identity, study_date, word_id, position) VALUES (?, ?, ?, ?)',
+      args: [identity, date, word.id, index]
+    })),
+    'write'
+  );
   return getDailyWords(identity, date);
 }
 
