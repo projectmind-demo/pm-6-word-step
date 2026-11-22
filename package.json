@@ -1,0 +1,13 @@
+{
+  "name": "word-step",
+  "private": true,
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "build": "node scripts/migrate.mjs"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.9"
+  }
+}
