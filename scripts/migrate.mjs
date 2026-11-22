@@ -21,15 +21,10 @@ const files = (await readdir(join(root, 'db/migrations'))).filter((file) => /^\d
 for (const filename of files) {
   const existing = await client.execute({ sql: `SELECT 1 FROM ${migrationTable} WHERE filename = ?`, args: [filename] });
   if (existing.rows.length) continue;
-  await client.execute('BEGIN');
-  try {
-    const sql = await readFile(join(root, 'db/migrations', filename), 'utf8');
-    for (const statement of statements(sql)) await client.execute(statement);
-    await client.execute({ sql: `INSERT INTO ${migrationTable} (filename, applied_at) VALUES (?, ?)`, args: [filename, new Date().toISOString()] });
-    await client.execute('COMMIT');
-  } catch (error) {
-    await client.execute('ROLLBACK');
-    throw error;
-  }
+  const sql = await readFile(join(root, 'db/migrations', filename), 'utf8');
+  await client.batch([
+    ...statements(sql),
+    { sql: `INSERT INTO ${migrationTable} (filename, applied_at) VALUES (?, ?)`, args: [filename, new Date().toISOString()] }
+  ], 'write');
 }
 await client.close();
